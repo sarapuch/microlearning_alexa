@@ -5,7 +5,7 @@ import logging
 import requests
 import json
 import ask_sdk_core.utils as ask_utils
-import os
+import os 
 from ask_sdk_s3.adapter import S3Adapter
 s3_adapter = S3Adapter(bucket_name = os.environ["S3_PERSISTENCE_BUCKET"])
 
@@ -25,6 +25,17 @@ logger.setLevel(logging.INFO)
 GENERAL_MANAGER = "http://castor.det.uvigo.es:7030/general_manager"
 STUDENTS = "http://castor.det.uvigo.es:7000/students/"
 
+def check_credentials(id_device):
+    #check user
+    
+    url = f"{GENERAL_MANAGER}/check_user/alexa/{id_device}"
+    response_api = requests.get(url)
+    
+    if response_api.status_code == 200:
+        return True
+    else:
+        return False
+    
 class LaunchRequestHandler(AbstractRequestHandler):
     """Handler for Skill Launch."""
     def can_handle(self, handler_input):
@@ -35,7 +46,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
         speak_output = "Bienvenido al servicio de microlearning. Necesito tu nombre, apellido y fecha de nacimiento."
-
+        
         ask_output = "Primero preséntate. Necesito tu nombre, apellido y fecha de nacimiento."
 
         return (
@@ -51,14 +62,14 @@ class HasAuthLaunchRequestHandler(AbstractRequestHandler):
         #extract data and checks if it exists
         attr = handler_input.attributes_manager.persistent_attributes
         attributes_are_present = ("name" in attr and "surname" in attr)
-
+        
         return attributes_are_present and ask_utils.is_request_type("LaunchRequest")(handler_input)
-
+        
     def handle(self, handler_input):
         attr = handler_input.attributes_manager.persistent_attributes
         name = attr["name"]
         surname = attr["surname"]
-
+        
         speak_output = 'Bienvenido de nuevo, {name} {surname}'.format(name = name, month = month)
         handler_input.response_builder.speak(speak_output)
         return handler_input.response_builder.response
@@ -75,12 +86,12 @@ class getNameIntentHandler(AbstractRequestHandler):
         name = slots["name"].value
         surname = slots["surname"].value
         date = slots["date"].value
-
+        
         #recogemos id_device
         sys_object = handler_input.request_envelope.context.system
         id_device = sys_object.device.device_id
-
-        #guardamos datos
+        
+        #guardamos datos 
         attributes_manager = handler_input.attributes_manager
         name_attributes = {
             "name": name,
@@ -88,19 +99,19 @@ class getNameIntentHandler(AbstractRequestHandler):
         }
         attributes_manager.persistence_attributes = name_attributes
         attributes_manager.save_persistent_attributes()
-
-        #envio api
+        
+        #envio api 
         url = "http://castor.det.uvigo.es:7000/students/identification_alexa/"+name+"/"+surname+"/"+date+"/"+id_device
-
+        
         response = requests.get(url)
-
+        
         speak_output = ''
         if response.status_code == 200:
             speak_output = 'Se ha identificado correctamente'
         else:
             speak_output = 'Hola {name} {surname}. Su codigo de error es {codigo}'.format(name = name, surname = surname, codigo = response.status_code)
-
-
+        
+        
         return (
             handler_input.response_builder
                 .speak(speak_output)
@@ -111,15 +122,26 @@ class getNameIntentHandler(AbstractRequestHandler):
 class listUnitIDIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return ask_utils.is_intent_name("listUnitIDIntent")(handler_input)
-
+        
     def handle(self, handler_input):
-
+        #obtener id_device
+        sys_object = handler_input.request_envelope.context.system
+        id_device = sys_object.device.device_id
+        
+        #comprobacion credenciales
+        if (not check_credentials(id_device)):
+            return(
+                handler_input
+                .response_builder
+                .speak('Usuario no identificado')
+                .response
+            )
+        
         url = GENERAL_MANAGER + '/get_units'
         response_api = requests.get(url)
-        #speak_output = f"Lista: {response_api.text}"
-
+        
         #verdadera funcion
-
+        
         listUnits = []
         speak_output = '  Lista: '
         data_array = response_api.json()
@@ -128,10 +150,10 @@ class listUnitIDIntentHandler(AbstractRequestHandler):
             name = d["name"]
             unit_string = f"ID {unit_id} {name} "
             listUnits.append(unit_string)
-
+        
         for l in listUnits:
             speak_output += l
-
+        
         return (
             handler_input
             .response_builder
@@ -145,14 +167,14 @@ class controller:
         #preguntar por id_user
         id_user = 1
         unit_id = unit_id
-
+        
         url = f"{GENERAL_MANAGER}/units/{unit_id}/{id_user}"
         #response_api = requests.get(url)
-
+        
         #falta obtencion de datos
-
+        
         speak_output = f"  Listado de microcontenidos de unidad {unit_id} no funcional"
-
+        
         return (
             handler_input.response_builder
                 .speak(speak_output)
@@ -163,30 +185,44 @@ class controller:
 class getUnitIDIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return ask_utils.is_intent_name("getUnitIDIntent")(handler_input)
-
+        
     def handle(self, handler_input):
         slots = handler_input.request_envelope.request.intent.slots
         unit_id = slots["unit_id"].value
-
+        
         return controller.listMCID(handler_input, unit_id)
 
 class listInformationMCIDIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return ask_utils.is_intent_name("listInformationMCIDIntent")(handler_input)
-
+        
     def handle(self, handler_input):
+        
+        #obtener id_device
+        sys_object = handler_input.request_envelope.context.system
+        id_device = sys_object.device.device_id
+        
+        #comprobacion credenciales
+        if (not check_credentials(id_device)):
+            return(
+                handler_input
+                .response_builder
+                .speak('Usuario no identificado')
+                .response
+            )
+        
         slots = handler_input.request_envelope.request.intent.slots
         micro_id = slots["micro_id"].value
-
+        
         url = f"{GENERAL_MANAGER}/microcontent?id={micro_id}"
         response_api = requests.get(url)
         data_array = response_api.json()
-
+        
         title = data_array["meta_data"]["title"]
         author = data_array["meta_data"]["author"]
-
-        speak_output = f"  Información sobre microcontenido {micro_id}. Título {title} y su autor es {author}"
-
+        
+        speak_output = f"  Información sobre microcontenido {micro_id}. Título {title} y su autor es {author}" 
+        
         return (
             handler_input.response_builder
                 .speak(speak_output)
@@ -194,22 +230,26 @@ class listInformationMCIDIntentHandler(AbstractRequestHandler):
                 .response
         )
 
+'''
+CLASES RELACIONADAS CON LA REPRODUCCION DE VIDEO/AUDIO SOBRE microcontenidos
+'''
+#REPRODUCCION A TRAVES DE URL (NO FUNCIONAL, POR AHORA)
 class playMediaMCIDIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return ask_utils.is_intent_name("playMediaMCIDIntent")(handler_input)
-
+        
     def handle(self, handler_input):
         slots = handler_input.request_envelope.request.intent.slots
         micro_id = slots["micro_id"].value
-
+        
         url = f"{GENERAL_MANAGER}/microcontent?id={micro_id}"
         response_api = requests.get(url)
         data_array = response_api.json()
-
+        
         for d in data_array["media"]:
             tipo = d["type"]
             url = d["url"]
-
+            
         return (
             handler_input.responseBuilder
                 .speak('Reproduciendo contenido')
@@ -223,7 +263,146 @@ class playMediaMCIDIntentHandler(AbstractRequestHandler):
                 .response
         )
 
+#REPRODUCCION DE VIDEO A TRAVES DE FICHERO .JSON
+class IntentAPLtHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return (ask_utils.is_intent_name("intentAPLtest")(handler_input) and
+                handler_input.request_envelope.request.object_type != "Alexa.Presentation.APL.UserEvent"
 
+    def handle(self, handler_input):
+        # type: (HandlerInput) ->  Response
+        # Check if is the apl interface is sopported
+
+        persistent_attr = handler_input.attributes_manager.persistent_attributes
+        if handler_input.request_envelope.context.system.device.supported_interfaces.alexa_presentation_apl:
+            render_document_directive = apl.render_document_directive.RenderDocumentDirective("token_video", j_apl_tv)
+            handler_input.attributes_manager.persistent_attributes["media_type"] = "video"
+            handler_input.attributes_manager.persistent_attributes["media_state"] = "playing"
+            handler_input.attributes_manager.save_persistent_attributes()
+            handler_input.attributes_manager.session_attributes["state"] = "VIDEO_PLAYING"
+            handler_input.response_builder.add_directive(render_document_directive)
+
+        else:
+            speak_output = "Este dispositivo no soporta A.P.L."
+            handler_input.response_builder.speak(speak_output).ask(" ")
+
+        return handler_input.response_builder.response
+
+class MediaControlIntentHandler(AbstractRequestHandler):
+    """ Handler para el intent SeekIntent, usado para proporcionar control temporal en la reproduccion del video"""
+
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return (ask_utils.is_intent_name("MediaControlIntent")(handler_input) and
+                handler_input.attributes_manager.persistent_attributes["media_state"] == "playing")
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+
+        media_type = handler_input.attributes_manager.persistent_attributes.get("media_type")
+
+        """---- Extraccion de datos ----"""
+        # Extacion de la id de los valores de los slots
+        intent = handler_input.request_envelope.request.intent
+        action = intent.slots["action"].resolutions.resolutions_per_authority[0].values[0].value.id
+        time = intent.slots["time"].resolutions.resolutions_per_authority[0].values[0].value.id
+        value = intent.slots["number"].value
+
+        """ --- Cálculo de los tiempos de reproducción pedidos ----
+        """
+        offset = 0
+        multiplier_dic = {'sec': 1000, 'min': 60000, 'hour': 3600000}
+        multiplier = multiplier_dic.get(time, 0)
+        if action == "back":
+            offset = - int(value) * multiplier
+        else:
+            offset = int(value) * multiplier
+
+        """---- Creacion de comandos y Directiva de video ----"""
+        if media_type == "video":
+            # Comando rewind, necesario para reiniciar la posicion actual de reproduccion a 0.
+            apl_rewind = apl.ControlMediaCommand(command="rewind", component_id="videoPlayer")
+            # Comando seek, value contiene el tiempo de reproduccion al que se quiere saltar (en milisegundos)
+            apl_seek = apl.ControlMediaCommand(command="seek", component_id="videoPlayer", value=offset)
+            # Comando play, inicia la reproduccion del video (necesario despues del comando seek)
+            apl_play = apl.ControlMediaCommand(command="play", component_id="videoPlayer")
+
+            # Directiva ExecuteCommands
+            if action == "go_to":
+                apl_ecd = apl.execute_commands_directive.ExecuteCommandsDirective([apl_rewind, apl_seek, apl_play],
+                                                                                  "token_video")
+            else:
+                apl_ecd = apl.execute_commands_directive.ExecuteCommandsDirective([apl_seek, apl_play], "token_video")
+
+            return handler_input.response_builder.add_directive(apl_ecd).response
+        elif media_type == "audio":
+            attr_persistent = handler_input.attributes_manager.persistent_attributes
+            mic = MicroContent(attr_persistent["microcontent"])
+            previous_offset = attr_persistent["media_cursor"]
+            current_offset = previous_offset + offset
+            audio_stream = audioplayer.stream.Stream(url=mic.getvideos()[0].getvideourl(), token="audio_token",
+                                                     offset_in_milliseconds=current_offset)
+            audio_item = audioplayer.audio_item.AudioItem(stream=audio_stream)
+            play_behavior = interfaces.audioplayer.PlayBehavior.REPLACE_ALL
+            api_directive = interfaces.audioplayer.PlayDirective(play_behavior, audio_item)
+            handler_input.response_builder.add_directive(api_directive)
+            return handler_input.response_builder.response
+
+#REPRODUCCION DE AUDIO A TRAVES DE FICHERO .JSON
+class AudioTestIntentHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return ask_utils.is_intent_name("audiotestintent")(handler_input)
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) ->  Response
+        # Check if is the apl interface is sopported
+        handler_input.attributes_manager.session_attributes["state"] = "AUDIO_PLAYING"
+        handler_input.attributes_manager.persistent_attributes["media_type"] = "audio"
+        handler_input.attributes_manager.persistent_attributes["media_state"] = "playing"
+        handler_input.attributes_manager.save_persistent_attributes()
+        if handler_input.request_envelope.context.system.device.supported_interfaces.audio_player:
+            attr_persistent = handler_input.attributes_manager.persistent_attributes
+            mic = MicroContent(attr_persistent["microcontent"])
+            audio_stream = audioplayer.stream.Stream(url=mic.getvideos()[0].getvideourl(), token="audio_token")
+            audio_item = audioplayer.audio_item.AudioItem(stream=audio_stream)
+            play_behavior = audioplayer.play_behavior.PlayBehavior.REPLACE_ALL
+            ap_directive = audioplayer.play_directive.PlayDirective(play_behavior, audio_item)
+            handler_input.response_builder.add_directive(ap_directive)
+
+        else:
+            speak_output = "Este dispositivo no tienes soporte para la interfaz audioPlayer"
+            handler_input.response_builder.speak(speak_output).ask("")
+
+        return handler_input.response_builder.response
+
+
+class AudiofinishedHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):  # type: (HandlerInput) -> bool
+        return ask_utils.is_request_type("AudioPlayer.PlaybackFinished")(handler_input)
+
+    def handle(self, handler_input):  # type: (HandlerInput) -> Response
+        return handler_input.response_builder.speak("fin de reproduccion").response
+
+
+class AudioStopHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return (ask_utils.is_request_type("AudioPlayer.PlaybackStopped")(handler_input) or
+                ask_utils.is_request_type("AudioPlayer.PlaybackFinished")(handler_input))
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+        attr_persistent = handler_input.attributes_manager.persistent_attributes
+        attr_persistent["media_cursor"] = handler_input.request_envelope.request.offset_in_milliseconds
+        handler_input.attributes_manager.save_persistent_attributes()
+        return handler_input.response_builder.response
+        
+
+'''
+AYUDA, CONTROL DE LA skill
+'''
 class HelpIntentHandler(AbstractRequestHandler):
     """Handler for Help Intent."""
     def can_handle(self, handler_input):
