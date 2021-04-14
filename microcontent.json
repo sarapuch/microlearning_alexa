@@ -1,0 +1,69 @@
+{
+  "title": "1.\u00bfPor qu\u00e9 es importante usar lenguaje inclusivo?",
+  "text": [""],
+  "meta_data": {
+    "title": "1.\u00bfPor qu\u00e9 es importante usar lenguaje inclusivo?",
+    "author": "mario",
+    "pub_date": "2021-01-07T09:36:17.481",
+    "last_modification": "2021-01-07T09:36:17.481",
+    "creation_type": "own creation"
+  },
+  "media": [
+    {
+      "type": "video",
+      "upload_form": "link_from_youtube",
+      "url": "http://www.youtube.com/embed/ZNwzAQVd9vY",
+      "text": ""
+    }
+  ],
+  "quiz": [
+    {
+      "question": "El lenguaje inclusivo trata de\u2026",
+      "answer": "Representar a hombres y mujeres de modo sim\u00e9trico a nivel ling\u00fc\u00edstico",
+      "explanation": "",
+      "choices": [
+        {
+          "choice_text": "Incluir a distintos colectivos en el g\u00e9nero masculino"
+        },
+        {
+          "choice_text": "Representar a hombres y mujeres de modo sim\u00e9trico a nivel ling\u00fc\u00edstico"
+        },
+        {
+          "choice_text": "Representar la ideolog\u00eda sexista en el lenguaje"
+        }
+      ]
+    },
+    {
+      "question": "\u00bfPor qu\u00e9 es importante no emplear un lenguaje sexista?",
+      "answer": "Ambas son correctas",
+      "explanation": "",
+      "choices": [
+        {
+          "choice_text": "Porque el lenguaje sexista deja un segundo plano a las mujeres"
+        },
+        {
+          "choice_text": "Porque el lenguaje sexista perpet\u00faa la desigualdad entre hombres y mujeres"
+        },
+        {
+          "choice_text": "Ambas son correctas"
+        }
+      ]
+    },
+    {
+      "question": "El video \u201chacer algo como una ni\u00f1a\u201d muestra\u2026",
+      "answer": "Que las ni\u00f1as y los ni\u00f1os van interiorizando a lo largo de su infancia que hacer algo como una ni\u00f1a es una expresi\u00f3n despectiva",
+      "explanation": "",
+      "choices": [
+        {
+          "choice_text": "Que a las ni\u00f1as les gustan las actividades femeninas"
+        },
+        {
+          "choice_text": "Que las ni\u00f1as y los ni\u00f1os van interiorizando a lo largo de su infancia que hacer algo como una ni\u00f1a es una expresi\u00f3n despectiva"
+        },
+        {
+          "choice_text": "Que el lenguaje sexista no influye en la autoestima"
+        }
+      ]
+    }
+  ]
+}

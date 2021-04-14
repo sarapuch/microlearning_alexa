@@ -1,0 +1,21 @@
+{
+  "name": "api_ebisu",
+  "version": "1.0.0",
+  "description": "REST API to operate with ebisu and MCLEarning Platform",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
+  },
+  "author": "Sara Puente",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  },
+  "dependencies": {
+    "ebisu-js": "^2.0.0",
+    "express": "^4.17.1",
+    "mongoose": "^5.12.3",
+    "save": "^2.4.0"
+  }
+}
